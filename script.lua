@@ -29,12 +29,30 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- 2. Create GUI Immediately with Maximum Display Order
+-- 2. Create GUI 
 local gui = Instance.new("ScreenGui", playerGui)
 gui.Name = "ExtremeOptimization"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
-gui.DisplayOrder = 999999999
+gui.DisplayOrder = 2000000000
+
+-- Vòng lặp liên tục ép GUI này lên trên cùng, không cho menu khác đè
+task.spawn(function()
+    while true do
+        pcall(function()
+            local maxOrder = 2000000000
+            for _, child in ipairs(playerGui:GetChildren()) do
+                if child:IsA("ScreenGui") and child ~= gui then
+                    if child.DisplayOrder and child.DisplayOrder >= maxOrder then
+                        maxOrder = child.DisplayOrder + 100
+                    end
+                end
+            end
+            gui.DisplayOrder = maxOrder
+        end)
+        task.wait(0.5)
+    end
+end)
 
 local blackFrame = Instance.new("Frame", gui)
 blackFrame.Size = UDim2.new(1, 0, 1, 0)
