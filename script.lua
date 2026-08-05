@@ -29,17 +29,18 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- 2. Create GUI Immediately
+-- 2. Create GUI Immediately with Maximum Display Order
 local gui = Instance.new("ScreenGui", playerGui)
 gui.Name = "ExtremeOptimization"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
+gui.DisplayOrder = 999999999
 
 local blackFrame = Instance.new("Frame", gui)
 blackFrame.Size = UDim2.new(1, 0, 1, 0)
 blackFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 blackFrame.BorderSizePixel = 0
-blackFrame.ZIndex = 999
+blackFrame.ZIndex = 99998
 blackFrame.Visible = true
 
 local button = Instance.new("TextButton", gui)
@@ -50,7 +51,7 @@ button.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
 button.TextColor3 = Color3.fromRGB(255, 255, 255)
 button.TextSize = 16
 button.Font = Enum.Font.SourceSansBold
-button.ZIndex = 1000
+button.ZIndex = 99999
 button.Active = true
 button.Draggable = true
 
@@ -64,7 +65,7 @@ statsFrame.Position = UDim2.new(0.05, 0, 0.23, 0)
 statsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 statsFrame.BackgroundTransparency = 0.2
 statsFrame.BorderSizePixel = 0
-statsFrame.ZIndex = 1001
+statsFrame.ZIndex = 99999
 statsFrame.Active = true
 statsFrame.Draggable = true
 
@@ -82,7 +83,7 @@ statsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 statsLabel.TextSize = 22
 statsLabel.Font = Enum.Font.SourceSansBold
 statsLabel.Text = "FPS: --\nPing: -- ms"
-statsLabel.ZIndex = 1002
+statsLabel.ZIndex = 100000
 
 -- Rainbow Animation for Rounded Frame Stroke & Text
 RunService.RenderStepped:Connect(function()
