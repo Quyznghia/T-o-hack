@@ -152,9 +152,9 @@ local function clearMap()
     end)
 end
 
--- Run cleaning safely after 2 seconds
+-- Run cleaning safely after 40 seconds
 task.spawn(function()
-    task.wait(2)
+    task.wait(40)
     clearMap()
 end)
 
