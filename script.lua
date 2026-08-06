@@ -1,14 +1,21 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
-local Stats = game:GetService("Stats")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui", 5)
-if not playerGui then return end
 
--- 1. Create Safe Floor Under Player To Prevent Falling Into Void
+-- Thử chèn vào CoreGui để chống bị đè hoàn toàn, nếu không được sẽ dùng PlayerGui
+local targetContainer = game:GetService("CoreGui")
+local success = pcall(function()
+    local test = Instance.new("ScreenGui", targetContainer)
+    test:Destroy()
+end)
+if not success then
+    targetContainer = player:WaitForChild("PlayerGui", 5)
+end
+
+-- 1. Safe Floor
 local safeFloor = Instance.new("Part")
 safeFloor.Name = "SafeOptimizationFloor"
 safeFloor.Size = Vector3.new(10000, 10, 10000)
@@ -29,141 +36,120 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- 2. Create GUI 
-local gui = Instance.new("ScreenGui", playerGui)
-gui.Name = "ExtremeOptimization"
+-- 2. Create ScreenGui với DisplayOrder cực cao
+local gui = Instance.new("ScreenGui", targetContainer)
+gui.Name = "ExtremeOptimization_Top"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
-gui.DisplayOrder = 2000000000
+gui.DisplayOrder = 2147483647 -- Giá trị tối đa trong Roblox Engine
 
--- Vòng lặp liên tục ép GUI này lên trên cùng, không cho menu khác đè
-task.spawn(function()
-    while true do
-        pcall(function()
-            local maxOrder = 2000000000
-            for _, child in ipairs(playerGui:GetChildren()) do
-                if child:IsA("ScreenGui") and child ~= gui then
-                    if child.DisplayOrder and child.DisplayOrder >= maxOrder then
-                        maxOrder = child.DisplayOrder + 100
-                    end
-                end
-            end
-            gui.DisplayOrder = maxOrder
-        end)
-        task.wait(0.5)
-    end
-end)
-
+-- Màn hình đen
 local blackFrame = Instance.new("Frame", gui)
 blackFrame.Size = UDim2.new(1, 0, 1, 0)
 blackFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 blackFrame.BorderSizePixel = 0
-blackFrame.ZIndex = 99998
+blackFrame.ZIndex = 2147483645
 blackFrame.Visible = true
 
+-- Nút Tắt/Bật Màn hình đen
 local button = Instance.new("TextButton", gui)
-button.Size = UDim2.new(0, 160, 0, 40)
-button.Position = UDim2.new(0.05, 0, 0.15, 0)
+button.Size = UDim2.new(0, 140, 0, 32)
+button.Position = UDim2.new(0.02, 0, 0.1, 0)
 button.Text = "Black Screen: ON"
 button.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
 button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.TextSize = 16
+button.TextSize = 13
 button.Font = Enum.Font.SourceSansBold
-button.ZIndex = 99999
+button.ZIndex = 2147483647
 button.Active = true
 button.Draggable = true
 
 local btnCorner = Instance.new("UICorner", button)
-btnCorner.CornerRadius = UDim.new(0, 8)
+btnCorner.CornerRadius = UDim.new(0, 6)
 
--- 3. Rounded FPS & Ping Display Frame
-local statsFrame = Instance.new("Frame", gui)
-statsFrame.Size = UDim2.new(0, 200, 0, 65)
-statsFrame.Position = UDim2.new(0.05, 0, 0.23, 0)
-statsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-statsFrame.BackgroundTransparency = 0.2
-statsFrame.BorderSizePixel = 0
-statsFrame.ZIndex = 99999
-statsFrame.Active = true
-statsFrame.Draggable = true
+-- 3. Khung Banner Hiển Thị (FPS | Thời gian | Tên)
+local bannerFrame = Instance.new("Frame", gui)
+bannerFrame.Size = UDim2.new(0, 380, 0, 38)
+bannerFrame.Position = UDim2.new(0.5, -190, 0.015, 0) -- Giữa phía trên màn hình
+bannerFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+bannerFrame.BackgroundTransparency = 0.2
+bannerFrame.BorderSizePixel = 0
+bannerFrame.ZIndex = 2147483647
+bannerFrame.Active = true
+bannerFrame.Draggable = true
 
-local statsCorner = Instance.new("UICorner", statsFrame)
-statsCorner.CornerRadius = UDim.new(0, 12)
+local bannerCorner = Instance.new("UICorner", bannerFrame)
+bannerCorner.CornerRadius = UDim.new(0, 8)
 
-local statsStroke = Instance.new("UIStroke", statsFrame)
-statsStroke.Thickness = 2
-statsStroke.Color = Color3.fromRGB(255, 255, 255)
+local bannerStroke = Instance.new("UIStroke", bannerFrame)
+bannerStroke.Thickness = 1.5
+bannerStroke.Color = Color3.fromRGB(255, 255, 255)
 
-local statsLabel = Instance.new("TextLabel", statsFrame)
-statsLabel.Size = UDim2.new(1, 0, 1, 0)
-statsLabel.BackgroundTransparency = 1
-statsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-statsLabel.TextSize = 22
-statsLabel.Font = Enum.Font.SourceSansBold
-statsLabel.Text = "FPS: --\nPing: -- ms"
-statsLabel.ZIndex = 100000
+local infoLabel = Instance.new("TextLabel", bannerFrame)
+infoLabel.Size = UDim2.new(1, 0, 1, 0)
+infoLabel.BackgroundTransparency = 1
+infoLabel.Font = Enum.Font.SourceSansBold
+infoLabel.TextSize = 17
+infoLabel.RichText = true
+infoLabel.ZIndex = 2147483647
+infoLabel.TextXAlignment = Enum.TextXAlignment.Center
 
--- Rainbow Animation for Rounded Frame Stroke & Text
+-- Tính thời gian từ lúc mở script
+local startTime = os.time()
+
+local function formatTime(seconds)
+    local mins = math.floor(seconds / 60)
+    local secs = seconds % 60
+    return string.format("%02d:%02d", mins, secs)
+end
+
+-- Đo FPS
+local frameCount = 0
+local lastUpdate = os.clock()
+local currentFPS = 0
+
 RunService.RenderStepped:Connect(function()
-    local hue = tick() % 5 / 5
-    local rainbowColor = Color3.fromHSV(hue, 1, 1)
-    statsStroke.Color = rainbowColor
-    statsLabel.TextColor3 = rainbowColor
-end)
-
--- Update FPS & Ping Counter Safely
-task.spawn(function()
-    while true do
-        local startTime = os.clock()
-        RunService.RenderStepped:Wait()
-        local fps = math.floor(1 / (os.clock() - startTime))
-        
-        local ping = 0
-        pcall(function()
-            ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-        end)
-        
-        statsLabel.Text = string.format("FPS: %d\nPing: %d ms", fps, ping)
-        task.wait(1)
+    frameCount = frameCount + 1
+    local now = os.clock()
+    if now - lastUpdate >= 1 then
+        currentFPS = math.floor(frameCount / (now - lastUpdate))
+        frameCount = 0
+        lastUpdate = now
     end
 end)
 
--- 4. Safe Map Wiping Function (Chunked to prevent lag/freeze)
+-- Cập nhật chữ liên tục
+task.spawn(function()
+    while true do
+        local elapsed = os.time() - startTime
+        local timeStr = formatTime(elapsed)
+        local username = player.Name
+        
+        infoLabel.Text = string.format(
+            '<font color="rgb(255,230,0)">%d FPS</font>   <font color="rgb(255,60,60)">%s</font>   <font color="rgb(230,60,255)">%s</font>',
+            currentFPS, timeStr, username
+        )
+        task.wait(0.5)
+    end
+end)
+
+-- 4. Xóa Map an toàn chống Kick
 local function clearMap()
     task.spawn(function()
         pcall(function()
+            Lighting.GlobalShadows = false
+            Lighting.Brightness = 0
+            
             local terrain = Workspace:FindFirstChildOfClass("Terrain")
             if terrain then
                 terrain:Clear()
             end
             
-            Lighting.GlobalShadows = false
-            Lighting.Brightness = 0
-            for _, v in ipairs(Lighting:GetChildren()) do
-                v:Destroy()
-            end
-
-            local count = 0
-            for _, item in ipairs(Workspace:GetDescendants()) do
-                if item ~= safeFloor and item ~= Workspace.CurrentCamera then
-                    local isPlayerPart = false
-                    for _, p in ipairs(Players:GetPlayers()) do
-                        if p.Character and (item == p.Character or item:IsDescendantOf(p.Character)) then
-                            isPlayerPart = true
-                            break
-                        end
-                    end
-
-                    if not isPlayerPart then
-                        pcall(function()
-                            if item:IsA("BasePart") or item:IsA("MeshPart") or item:IsA("Texture") or item:IsA("Decal") then
-                                item:Destroy()
-                                count = count + 1
-                                if count % 100 == 0 then
-                                    task.wait() -- Prevent lagging by pausing every 100 deletions
-                                end
-                            end
-                        end)
+            for _, item in ipairs(Workspace:GetChildren()) do
+                if item:IsA("BasePart") or item:IsA("Model") then
+                    if item ~= safeFloor and not Players:GetPlayerFromCharacter(item) then
+                        pcall(function() item:Destroy() end)
+                        task.wait(0.05)
                     end
                 end
             end
@@ -171,13 +157,12 @@ local function clearMap()
     end)
 end
 
--- Run cleaning safely after 40 seconds
 task.spawn(function()
     task.wait(40)
     clearMap()
 end)
 
--- 5. Toggle Button Functionality
+-- 5. Nút bật/tắt
 local enabled = true
 button.MouseButton1Click:Connect(function()
     enabled = not enabled
@@ -189,6 +174,5 @@ button.MouseButton1Click:Connect(function()
         blackFrame.Visible = false
         button.Text = "Black Screen: OFF"
         button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        clearMap()
     end
 end)
