@@ -57,26 +57,10 @@ topGui.ResetOnSpawn = false
 topGui.IgnoreGuiInset = true
 topGui.DisplayOrder = 2147483647
 
--- Nút Tắt/Bật Màn hình đen
-local button = Instance.new("TextButton", topGui)
-button.Size = UDim2.new(0, 140, 0, 32)
-button.Position = UDim2.new(0.02, 0, 0.17, 0)
-button.Text = "Black Screen: ON"
-button.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.TextSize = 13
-button.Font = Enum.Font.SourceSansBold
-button.ZIndex = 10
-button.Active = true
-button.Draggable = true
-
-local btnCorner = Instance.new("UICorner", button)
-btnCorner.CornerRadius = UDim.new(0, 6)
-
--- Khung Banner Hiển Thị (Làm TO hơn và chuyển sang GÓC BÊN TRÁI)
+-- Khung Banner Hiển Thị (Đã đẩy xuống Y = 0.08 để tránh bị mép trên che)
 local bannerFrame = Instance.new("Frame", topGui)
-bannerFrame.Size = UDim2.new(0, 420, 0, 45) -- Kích thước to hơn
-bannerFrame.Position = UDim2.new(0.02, 0, 0.02, 0) -- Đặt ở góc trên bên trái
+bannerFrame.Size = UDim2.new(0, 380, 0, 42)
+bannerFrame.Position = UDim2.new(0.02, 0, 0.08, 0) -- Đẩy xuống thấp hơn
 bannerFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 bannerFrame.BackgroundTransparency = 0.2
 bannerFrame.BorderSizePixel = 0
@@ -95,10 +79,26 @@ local infoLabel = Instance.new("TextLabel", bannerFrame)
 infoLabel.Size = UDim2.new(1, 0, 1, 0)
 infoLabel.BackgroundTransparency = 1
 infoLabel.Font = Enum.Font.SourceSansBold
-infoLabel.TextSize = 20 -- Chữ to rõ hơn
+infoLabel.TextSize = 18
 infoLabel.RichText = true
 infoLabel.ZIndex = 11
 infoLabel.TextXAlignment = Enum.TextXAlignment.Center
+
+-- Nút Tắt/Bật Màn hình đen (Nằm ngay bên dưới banner)
+local button = Instance.new("TextButton", topGui)
+button.Size = UDim2.new(0, 140, 0, 32)
+button.Position = UDim2.new(0.02, 0, 0.19, 0) -- Đẩy xuống theo banner
+button.Text = "Black Screen: ON"
+button.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.TextSize = 13
+button.Font = Enum.Font.SourceSansBold
+button.ZIndex = 10
+button.Active = true
+button.Draggable = true
+
+local btnCorner = Instance.new("UICorner", button)
+btnCorner.CornerRadius = UDim.new(0, 6)
 
 local startTime = os.time()
 
@@ -123,14 +123,13 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Hiệu ứng Rainbow và cập nhật thông tin liên tục
+-- Hiệu ứng Rainbow và cập nhật thông tin
 task.spawn(function()
     while true do
         local elapsed = os.time() - startTime
         local timeStr = formatTime(elapsed)
         local username = player.Name
         
-        -- Tạo màu Rainbow chạy theo thời gian thực (Hue chạy từ 0 đến 1)
         local tickTime = tick() * 2
         local r = math.floor(math.sin(tickTime) * 127 + 128)
         local g = math.floor(math.sin(tickTime + 2) * 127 + 128)
@@ -140,7 +139,7 @@ task.spawn(function()
             '<font color="rgb(%d,%d,%d)">%d FPS</font>   <font color="rgb(255,60,60)">%s</font>   <font color="rgb(230,60,255)">%s</font>',
             r, g, b, currentFPS, timeStr, username
         )
-        task.wait(0.05) -- Cập nhật nhanh mượt để hiệu ứng rainbow nhấp nháy đẹp mắt
+        task.wait(0.05)
     end
 end)
 
