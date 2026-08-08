@@ -1,39 +1,113 @@
+-- =======================================================
+-- SCRIPT FIX LAG & BOOST FPS (ĐÃ SỬA LỖI & TỐI ƯU HÓA)
+-- =======================================================
+
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-local Lighting = game:GetService("Lighting")
+local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
 
-local player = Players.LocalPlayer
-
--- Xác định container hiển thị
-local targetContainer = game:GetService("CoreGui")
-local success = pcall(function()
-    local test = Instance.new("ScreenGui", targetContainer)
-    test:Destroy()
+-- 1. CẤU HÌNH ĐỒ HỌA THẤP NHẤT
+pcall(function()
+    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    Lighting.GlobalShadows = false
+    Lighting.Brightness = 0
+    Lighting.FogEnd = 9e9
 end)
-if not success then
-    targetContainer = player:WaitForChild("PlayerGui", 5)
+
+-- 2. TẠO KHUNG FPS CẦU VỒNG (KHÔNG CHE UI KHÁC)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "FPS_Boost_UI"
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
+-- Đặt DisplayOrder âm để nằm dưới cùng, không đè lên Script Hub khác
+ScreenGui.DisplayOrder = -100 
+
+local Frame = Instance.new("Frame")
+Frame.Parent = ScreenGui
+Frame.Size = UDim2.new(0, 150, 0, 32)
+Frame.Position = UDim2.new(0.5, -75, 0, 10)
+Frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Frame.BackgroundTransparency = 0.4 -- Trong suốt nhẹ để nhìn qua được
+Frame.BorderSizePixel = 0
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Parent = Frame
+UIStroke.Thickness = 2
+
+local TextLabel = Instance.new("TextLabel")
+TextLabel.Parent = Frame
+TextLabel.Size = UDim2.new(1, 0, 1, 0)
+TextLabel.BackgroundTransparency = 1
+TextLabel.TextSize = 14
+TextLabel.Font = Enum.Font.SourceSansBold
+TextLabel.Text = "FPS: ..."
+
+-- Hiệu ứng Cầu Vồng (Rainbow) mượt mà cho chữ và viền
+task.spawn(function()
+    local hue = 0
+    while task.wait(0.02) do
+        hue = (hue + 0.005) % 1
+        local rainbowColor = Color3.fromHSV(hue, 0.8, 1)
+        TextLabel.TextColor3 = rainbowColor
+        UIStroke.Color = rainbowColor
+    end
+end)
+
+-- Đếm và cập nhật FPS thực tế
+local lastTick = tick()
+local frameCount = 0
+
+RunService.RenderStepped:Connect(function()
+    frameCount = frameCount + 1
+    local now = tick()
+    if now - lastTick >= 1 then
+        TextLabel.Text = "FPS: " .. tostring(frameCount)
+        frameCount = 0
+        lastTick = now
+    end
+end)
+
+-- 3. TỐI ƯU VẬT THỂ (FIX LỖI BAY NHÂN VẬT)
+local function isCharacterPart(item)
+    -- Kiểm tra xem vật thể có thuộc nhân vật người chơi hay không
+    return item:FindFirstAncestorOfClass("Model") and item:FindFirstAncestorOfClass("Model"):FindFirstChildOfClass("Humanoid")
 end
 
--- 1. Safe Floor
-local safeFloor = Instance.new("Part")
-safeFloor.Name = "SafeOptimizationFloor"
-safeFloor.Size = Vector3.new(10000, 10, 10000)
-safeFloor.Anchored = true
-safeFloor.Transparency = 1
-safeFloor.CanCollide = true
-safeFloor.Parent = Workspace
+local function optimizePart(item)
+    -- Bỏ qua nhân vật để không bị hỏng physics/bay lên trời
+    if isCharacterPart(item) then return end
 
-RunService.Heartbeat:Connect(function()
-    local char = player.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        local hrp = char.HumanoidRootPart
-        safeFloor.Position = Vector3.new(hrp.Position.X, hrp.Position.Y - 5, hrp.Position.Z)
-        if hrp.Position.Y < (safeFloor.Position.Y - 10) then
-            hrp.CFrame = CFrame.new(hrp.Position.X, safeFloor.Position.Y + 10, hrp.Position.Z)
-            hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-        end
+    if item:IsA("ParticleEmitter") or item:IsA("Trail") or item:IsA("Smoke") or item:IsA("Fire") or item:IsA("Sparkles") then
+        item.Enabled = false
+    elseif item:IsA("Decal") or item:IsA("Texture") then
+        item.Texture = ""
+    elseif item:IsA("SpecialMesh") then
+        item.TextureId = ""
+    elseif item:IsA("BasePart") then
+        item.Material = Enum.Material.SmoothPlastic
+        item.Reflectance = 0
     end
+end
+
+-- Áp dụng cho các vật thể trong map
+for _, item in pairs(workspace:GetDescendants()) do
+    optimizePart(item)
+end
+
+-- Tối ưu vật thể mới sinh ra
+workspace.DescendantAdded:Connect(function(item)
+    task.wait(0.1)
+    optimizePart(item)
+end)
+
+-- Tắt hiệu ứng làm đẹp trong Lighting
+for _, effect in pairs(Lighting:GetChildren()) do
+    if effect:IsA("PostEffect") or effect:IsA("BloomEffect") or effect:IsA("BlurEffect") or effect:IsA("SunRaysEffect") or effect:IsA("ColorCorrectionEffect") then
+        effect.Enabled = false
+    end
+end
 end)
 
 -- 2. GUI cho màn hình đen
