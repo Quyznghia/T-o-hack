@@ -95,49 +95,6 @@ for _, effect in pairs(Lighting:GetChildren()) do
         effect.Enabled = false
     end
 end
-UIStroke.Thickness = 2
-
-local TextLabel = Instance.new("TextLabel")
-TextLabel.Parent = Frame
-TextLabel.Size = UDim2.new(1, 0, 1, 0)
-TextLabel.BackgroundTransparency = 1
-TextLabel.TextSize = 14
-TextLabel.Font = Enum.Font.SourceSansBold
-TextLabel.Text = "FPS: ..."
-
--- Hiệu ứng Cầu Vồng (Rainbow) mượt mà cho chữ và viền
-task.spawn(function()
-    local hue = 0
-    while task.wait(0.02) do
-        hue = (hue + 0.005) % 1
-        local rainbowColor = Color3.fromHSV(hue, 0.8, 1)
-        TextLabel.TextColor3 = rainbowColor
-        UIStroke.Color = rainbowColor
-    end
-end)
-
--- Đếm và cập nhật FPS thực tế
-local lastTick = tick()
-local frameCount = 0
-
-RunService.RenderStepped:Connect(function()
-    frameCount = frameCount + 1
-    local now = tick()
-    if now - lastTick >= 1 then
-        TextLabel.Text = "FPS: " .. tostring(frameCount)
-        frameCount = 0
-        lastTick = now
-    end
-end)
-
--- 3. TỐI ƯU VẬT THỂ (FIX LỖI BAY NHÂN VẬT)
-local function isCharacterPart(item)
-    -- Kiểm tra xem vật thể có thuộc nhân vật người chơi hay không
-    return item:FindFirstAncestorOfClass("Model") and item:FindFirstAncestorOfClass("Model"):FindFirstChildOfClass("Humanoid")
-end
-
-local function optimizePart(item)
-    -- Bỏ qua nhân vật để không bị hỏng physics/bay lên trời
     if isCharacterPart(item) then return end
 
     if item:IsA("ParticleEmitter") or item:IsA("Trail") or item:IsA("Smoke") or item:IsA("Fire") or item:IsA("Sparkles") then
