@@ -1,14 +1,9 @@
--- =======================================================
--- SCRIPT FIX LAG & BOOST FPS (ĐÃ SỬA LỖI & TỐI ƯU HÓA)
--- =======================================================
-
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 
--- 1. CẤU HÌNH ĐỒ HỌA THẤP NHẤT
 pcall(function()
     settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
     Lighting.GlobalShadows = false
@@ -16,24 +11,90 @@ pcall(function()
     Lighting.FogEnd = 9e9
 end)
 
--- 2. TẠO KHUNG FPS CẦU VỒNG (KHÔNG CHE UI KHÁC)
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "FPS_Boost_UI"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
--- Đặt DisplayOrder âm để nằm dưới cùng, không đè lên Script Hub khác
-ScreenGui.DisplayOrder = -100 
+ScreenGui.DisplayOrder = -100
 
 local Frame = Instance.new("Frame")
 Frame.Parent = ScreenGui
-Frame.Size = UDim2.new(0, 150, 0, 32)
-Frame.Position = UDim2.new(0.5, -75, 0, 10)
+Frame.Size = UDim2.new(0, 140, 0, 30)
+Frame.Position = UDim2.new(0.5, -70, 0, 10)
 Frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Frame.BackgroundTransparency = 0.4 -- Trong suốt nhẹ để nhìn qua được
+Frame.BackgroundTransparency = 0.4
 Frame.BorderSizePixel = 0
 
 local UIStroke = Instance.new("UIStroke")
 UIStroke.Parent = Frame
+UIStroke.Thickness = 2
+
+local TextLabel = Instance.new("TextLabel")
+TextLabel.Parent = Frame
+TextLabel.Size = UDim2.new(1, 0, 1, 0)
+TextLabel.BackgroundTransparency = 1
+TextLabel.TextSize = 14
+TextLabel.Font = Enum.Font.SourceSansBold
+TextLabel.Text = "FPS: ..."
+
+task.spawn(function()
+    local hue = 0
+    while task.wait(0.02) do
+        hue = (hue + 0.005) % 1
+        local rainbowColor = Color3.fromHSV(hue, 0.8, 1)
+        TextLabel.TextColor3 = rainbowColor
+        UIStroke.Color = rainbowColor
+    end
+end)
+
+local frameCount = 0
+local lastTime = os.clock()
+
+RunService.RenderStepped:Connect(function()
+    frameCount = frameCount + 1
+    local currentTime = os.clock()
+    
+    if currentTime - lastTime >= 0.5 then
+        local fps = math.floor(frameCount / (currentTime - lastTime))
+        TextLabel.Text = "FPS: " .. tostring(fps)
+        frameCount = 0
+        lastTime = currentTime
+    end
+end)
+
+local function isCharacterPart(item)
+    return item:FindFirstAncestorOfClass("Model") and item:FindFirstAncestorOfClass("Model"):FindFirstChildOfClass("Humanoid")
+end
+
+local function optimizePart(item)
+    if isCharacterPart(item) then return end
+
+    if item:IsA("ParticleEmitter") or item:IsA("Trail") or item:IsA("Smoke") or item:IsA("Fire") or item:IsA("Sparkles") then
+        item.Enabled = false
+    elseif item:IsA("Decal") or item:IsA("Texture") then
+        item.Texture = ""
+    elseif item:IsA("SpecialMesh") then
+        item.TextureId = ""
+    elseif item:IsA("BasePart") then
+        item.Material = Enum.Material.SmoothPlastic
+        item.Reflectance = 0
+    end
+end
+
+for _, item in pairs(workspace:GetDescendants()) do
+    optimizePart(item)
+end
+
+workspace.DescendantAdded:Connect(function(item)
+    task.wait(0.1)
+    optimizePart(item)
+end)
+
+for _, effect in pairs(Lighting:GetChildren()) do
+    if effect:IsA("PostEffect") or effect:IsA("BloomEffect") or effect:IsA("BlurEffect") or effect:IsA("SunRaysEffect") or effect:IsA("ColorCorrectionEffect") then
+        effect.Enabled = false
+    end
+end
 UIStroke.Thickness = 2
 
 local TextLabel = Instance.new("TextLabel")
